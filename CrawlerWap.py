@@ -51,26 +51,33 @@ def fix_date(date_in):
 
 
 class CrawlerWap:
-    def __init__(self, crawlday):
+    def __init__(self, crawlday,sleep_t):
+        time1 = time.time()
         self.deadline = get_timestamp() - crawlday*24*60*60*1000
+        self.sleep_t = sleep_t
         url = "http://weibo.cn/search/mblog?hideSearchFrame=&keyword="
         self.cook = {"cookie": "cookie=_T_WM=4d74ae138f1dde025f5514231908306b; SCF=AgFcYO36Y07pPER4UhWS7UfNSt1WRu4radY76dOP1y56QKXhiwd33jSSbwij8P6R7-v83t0gBbV3-0Dy-mEP2G4.; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WWEyJSyhdadayw1oDnggcsj5JpX5o2p5NHD95QcehecehBXSoMRWs4Dqcj6i--ciKnRiK.pi--ciK.Ri-8si--NiK.4i-i8i--fiKysiK.Ri--fi-2fi-z0i--4iKnNiK.pi--fiKnRiKLW; M_WEIBOCN_PARAMS=luicode%3D10000011%26lfid%3D102803_ctg1_8999_-_ctg1_8999_home; SUB=_2A250DAgPDeRhGeBO6FQR9CrKzDSIHXVXDqhHrDV6PUJbkdBeLRbskW1N0E5Fn-UD72IDEbPGiYC032sSog..; SUHB=0u5REVJJ7drCgh; SSOLoginState=1493727327"}
-        self.conn = MySQLdb.connect('127.0.0.1', 'root', '****', 'weibo_crawler', charset='utf8')
+        self.conn = MySQLdb.connect('127.0.0.1', 'root', '669029', 'weibo_crawler', charset='utf8')
         self.cur = self.conn.cursor()
-        self.cur.execute('select * from keyword_record')
+        self.cur.execute('select * from keyword_record where key_id > 8')
         results = self.cur.fetchall()
         for keyword in results:
             self.url = url+keyword[1]
-            page = self.crawpage(self.url)
+            page = int(self.crawpage(self.url))
             print "开始爬取", keyword[0], "page:", page
             if page > 0:  # page=0则该关键词没有对应微博
-                for i in xrange(1, 3):  # page+1
+                for i in xrange(1, page+1):  # page+1
                     print keyword[1], "第", i, "页"
-                    weibo_time = self.crawlbykey(i, keyword[0])
-                    if weibo_time < self.deadline:
-                        break
+                    try:
+                        weibo_time = self.crawlbykey(i, keyword[0])
+                        if weibo_time < self.deadline:
+                            break
+                    except Exception, e:
+                        print e
+                    time.sleep(self.sleep_t)
         self.conn.commit()
         print "关键词微博及评论爬取完毕----"
+        '''
         print "开始爬取参与用户信息----"
         self.cur.execute('select user_id from weibo_inform')
         users = self.cur.fetchall()
@@ -88,20 +95,26 @@ class CrawlerWap:
             except Exception, e:
                 print e
         self.conn.commit()
-
+        '''
+        time2 = time.time()
+        print time2-time1
 
     # 爬取包含关键词的微博网页数
     def crawpage(self, url_in):
-        html = requests.get(url_in, cookies=self.cook)
-        selector = etree.HTML(html.content)
-        # print html.content
-        pagelist = selector.xpath('//div[@id="pagelist"]/form/div/text()')
-        # print pagelist
-        if len(pagelist)>0:
-            page = re.findall('\d+', pagelist[1])[-1]
-        else:
-            page = 0
-        return page
+        try:
+            html = requests.get(url_in, cookies=self.cook)
+            selector = etree.HTML(html.content)
+            # print html.content
+            pagelist = selector.xpath('//div[@id="pagelist"]/form/div/text()')
+            # print pagelist
+            if len(pagelist) > 0:
+                page = re.findall('\d+', pagelist[1])[-1]
+            else:
+                page = 0
+            return page
+        except Exception, e:
+            print e
+            return 0
 
     # weibo_id, weibo_class(1.原创；2.转发),weibo, source(1.空, 2.原微博)，source_id(1.空, 2.原微博id)
     # user_url, user_id, nick_name
@@ -160,6 +173,7 @@ class CrawlerWap:
     def crawlcomment(self, wb_id):
         comment_url = "https://weibo.cn/comment/" + wb_id.replace('M_', '')
         html_c = requests.get(comment_url, cookies=self.cook)
+        time.sleep(self.sleep_t)
         selector_c = etree.HTML(html_c.content)
         all_txt = selector_c.xpath('//div[@class="c"][@id]')
         comment = all_txt[1:len(all_txt)]
@@ -231,4 +245,4 @@ class CrawlerWap:
 
 
 
-c = CrawlerWap(10)
+c = CrawlerWap(10, 1.5)
