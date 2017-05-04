@@ -56,8 +56,8 @@ class CrawlerWap:
         self.deadline = get_timestamp() - crawlday*24*60*60*1000
         self.sleep_t = sleep_t
         url = "http://weibo.cn/search/mblog?hideSearchFrame=&keyword="
-        self.cook = {"cookie": "cookie=_T_WM=4d74ae138f1dde025f5514231908306b; SCF=AgFcYO36Y07pPER4UhWS7UfNSt1WRu4radY76dOP1y56QKXhiwd33jSSbwij8P6R7-v83t0gBbV3-0Dy-mEP2G4.; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WWEyJSyhdadayw1oDnggcsj5JpX5o2p5NHD95QcehecehBXSoMRWs4Dqcj6i--ciKnRiK.pi--ciK.Ri-8si--NiK.4i-i8i--fiKysiK.Ri--fi-2fi-z0i--4iKnNiK.pi--fiKnRiKLW; M_WEIBOCN_PARAMS=luicode%3D10000011%26lfid%3D102803_ctg1_8999_-_ctg1_8999_home; SUB=_2A250DAgPDeRhGeBO6FQR9CrKzDSIHXVXDqhHrDV6PUJbkdBeLRbskW1N0E5Fn-UD72IDEbPGiYC032sSog..; SUHB=0u5REVJJ7drCgh; SSOLoginState=1493727327"}
-        self.conn = MySQLdb.connect('127.0.0.1', 'root', '669029', 'weibo_crawler', charset='utf8')
+        self.cook = {"cookie":""}
+        self.conn = MySQLdb.connect('127.0.0.1', 'root', '*****', 'weibo_crawler', charset='utf8')
         self.cur = self.conn.cursor()
         self.cur.execute('select * from keyword_record where key_id > 8')
         results = self.cur.fetchall()
